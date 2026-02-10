@@ -5,6 +5,7 @@ from requests import Response
 
 
 def is_cmcc() -> bool:
+    """check is `CMCC-PTU` connected"""
     import subprocess
 
     wifi = subprocess.check_output(["netsh", "WLAN", "show", "interfaces"])
@@ -38,10 +39,10 @@ def parse_redirect(resp: Response = get_redirect_response()) -> str | None:
     从重定向页面解析校园网登录参数
 
     Args:
-            resp: 从重定向url获取的响应
+        resp: 从重定向url获取的响应
 
     Returns:
-            str: 用于登录的url
+        str: 用于登录的url
     """
 
     # 1. 从 HTTP 头获取

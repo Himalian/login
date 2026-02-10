@@ -25,7 +25,14 @@ def extract_json(raw_text: str):
 
 
 def login_dorm(username: str, password: str):
-    """用于登录宿舍有线网络"""
+    """用于登录宿舍有线网络
+
+    Args:
+        username: 用户名
+        password: 密码
+
+    Returns:
+    """
     timestamp = int(time.time() * 1000)
     login_url = f"http://{wired_ip}/drcom/login"
 
