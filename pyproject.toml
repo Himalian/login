@@ -12,7 +12,12 @@ dependencies = [
     "requests>=2.32.5",
 ]
 
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
 [dependency-groups]
 dev = [
     "pre-commit>=4.3.0",
+    "pytest",
+    "ruff>=0.15.5",
 ]
