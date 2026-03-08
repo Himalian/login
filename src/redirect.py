@@ -1,26 +1,34 @@
 import re
 
 import requests
+import os
 from requests import Response
 
 
 def is_cmcc() -> bool:
-    """check is `CMCC-PTU` connected"""
+    """check if `CMCC-PTU` connected"""
     import subprocess
 
-    wifi = subprocess.check_output(["netsh", "WLAN", "show", "interfaces"])
-    data = wifi.decode("utf-8")
-    ssid = ["CMCC-PTU", "programer"]
-    if any(i in data for i in ssid):
-        return True
-    else:
+    try:
+        if os.name == "posix":
+            ssid = subprocess.check_output(
+                ["nmcli", "connection", "show", "--active"], stderr=subprocess.DEVNULL
+            )
+        else:
+            ssid = subprocess.check_output(
+                ["netsh", "WLAN", "show", "interfaces"], stderr=subprocess.DEVNULL
+            )
+
+        return b"CMCC-PTU" in ssid
+    except (subprocess.CalledProcessError, FileNotFoundError):
         return False
 
 
 def get_redirect_response(
     url: str = "http://www.msftconnecttest.com/redirect",
     timeout: int = 10,
-):
+) -> Response:
+    """Get redirect response from a URL"""
     s = requests.session()
     s.proxies.clear()
     s.trust_env = False
@@ -34,16 +42,21 @@ def get_redirect_response(
         raise
 
 
-def parse_redirect(resp: Response = get_redirect_response()) -> str | None:
+def parse_redirect(resp: Response | None = None) -> str | None:
     """
     从重定向页面解析校园网登录参数
 
     Args:
-        resp: 从重定向url获取的响应
+            resp: 从重定向url获取的响应。如果为 None，则调用 get_redirect_response()。
 
     Returns:
-        str: 用于登录的url
+            str: 用于登录的url, 如果已登录返回 "ALREADY_LOGGED"
     """
+    if resp is None:
+        try:
+            resp = get_redirect_response()
+        except Exception:
+            return None
 
     # 1. 从 HTTP 头获取
     if resp.status_code in [301, 302, 303, 307, 308]:
@@ -55,11 +68,19 @@ def parse_redirect(resp: Response = get_redirect_response()) -> str | None:
             print(f"从 HTTP headers获取到重定向 URL: {redirect_url}")
             return redirect_url
     else:
-        # 2. 从 HTML 提取
-        m = re.search(r'location\.href\s*=\s*"(http[^"]+)"', resp.text)
+        # 2. Extract authentication url
+        # 尝试匹配 location.href
+        m = re.search(r"location\.href\s*=\s*['\"](http[^'\"]+)['\"]", resp.text)
         if m:
             redirect_url = m.group(1)
-            print(f"从 HTML 提取到重定向 URL: {redirect_url}")
+            print(f"从 HTML (script) 提取到重定向 URL: {redirect_url}")
+            return redirect_url
+
+        # Fallback: 尝试匹配 <a href="...">
+        m = re.search(r"<a\s+href=['\"](http[^'\"]+)['\"]", resp.text)
+        if m:
+            redirect_url = m.group(1)
+            print(f"从 HTML (a tag) 提取到重定向 URL: {redirect_url}")
             return redirect_url
 
     return None

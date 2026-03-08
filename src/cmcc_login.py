@@ -42,7 +42,7 @@ class CMCCAuthenticator:
         if self._check_already_logged():
             return
 
-        self._update_session_from_redirect()
+        self._update_pattern_from_redirect()
 
         if self.is_authenticated:
             return
@@ -64,7 +64,7 @@ class CMCCAuthenticator:
 
         return False
 
-    def _update_session_from_redirect(self) -> None:
+    def _update_pattern_from_redirect(self) -> None:
         match = self.REDIRECT_PATTERN.search(self.ctx.login_url)
         if not match:
             return
