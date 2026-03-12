@@ -1,3 +1,4 @@
+alias auth := login
 login:
     uv run main.py
 fix:tidy
