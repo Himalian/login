@@ -1,10 +1,15 @@
 # pyright: strict
 from src.cmcc_login import CMCCAuthenticator
-from src.config import settings
-from src.redirect import is_cmcc
+from src.redirect import is_cmcc, is_network_connected
 
 
 def main() -> None:
+    from src.config import settings
+
+    if not is_network_connected():
+        print("Error: No network connection detected. Please check your network cable or Wi-Fi.")
+        return
+
     username = settings.USERNAME
     password = settings.PASSWORD
 
@@ -20,4 +25,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("Operation canceled by User")
+    except Exception as e:
+        print(f"Error: {e}")

@@ -5,6 +5,29 @@ import os
 from requests import Response
 
 
+def is_network_connected() -> bool:
+    """Check if any network interface is connected"""
+    import subprocess
+
+    try:
+        if os.name == "posix":
+            # Using nmcli to check general status
+            # -t (terse), -f STATE (field STATE), g (general)
+            output = subprocess.check_output(
+                ["nmcli", "-t", "-f", "STATE", "g"], stderr=subprocess.DEVNULL
+            ).decode().strip()
+            return output in ["connected", "connected (local)", "connected (site-only)"]
+        else:
+            # Using netsh to check interface status
+            output = subprocess.check_output(
+                ["netsh", "interface", "show", "interface"], stderr=subprocess.DEVNULL
+            ).decode(errors="ignore")
+            # In English Windows it's "Connected", in Chinese it's "已连接"
+            return "Connected" in output or "已连接" in output
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+
+
 def is_cmcc() -> bool:
     """check if `CMCC-PTU` connected"""
     import subprocess
